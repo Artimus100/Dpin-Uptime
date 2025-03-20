@@ -10,8 +10,9 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.12.5",
     "@types/express": "^5.0.0",
-    "express": "^4.21.2",
-    "db" :"*"
+    "db": "*",
+    "express": "^4.21.2"
   }
 }
