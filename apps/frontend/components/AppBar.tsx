@@ -12,7 +12,7 @@ import {
 export function AppBar(){
 
     return  <div className='flex justify-between itens-center p-4'>
-        <div> Dpin- Monitolr</div>
+        <div> Dpin- Monitor</div>
         <div>
 
             <SignedOut>
