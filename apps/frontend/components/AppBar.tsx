@@ -1,7 +1,6 @@
 "use client"
 
 import {
-    ClerkProvider,
     SignInButton,
     SignUpButton,
     SignedIn,
@@ -15,7 +14,6 @@ export function AppBar(){
     return  <div className='flex justify-between itens-center p-4'>
         <div> Dpin- Monitolr</div>
         <div>
-        <ClerkProvider>
 
             <SignedOut>
                 <SignInButton />
@@ -24,7 +22,6 @@ export function AppBar(){
             <SignedIn>
                 <UserButton />
             </SignedIn>
-            </ClerkProvider>
 
         </div>
     </div>
