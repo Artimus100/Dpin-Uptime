@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link"
 import { ArrowRight, Check, Github, MessageSquare, Twitter } from "lucide-react"
 
