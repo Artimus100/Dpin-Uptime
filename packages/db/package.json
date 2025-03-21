@@ -3,11 +3,14 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
-  "exports":{
-    "./client" : "./src/index.ts"
+  "exports": {
+    "./client": "./src/index.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/node": "^22.13.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -15,5 +18,8 @@
   "dependencies": {
     "@prisma/client": "6.5.0",
     "prisma": "^6.5.0"
+  },
+  "prisma": {
+    "seed": "ts-node seed.ts"
   }
 }

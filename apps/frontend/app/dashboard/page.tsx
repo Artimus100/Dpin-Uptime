@@ -8,7 +8,6 @@ import {
   Bell,
   ChevronDown,
   ChevronUp,
-  Clock,
   Globe,
   Home,
   Menu,
@@ -183,14 +182,14 @@ function useWebsites() {
       setWebsites((prev) => [...prev, newWebsite])
 
       // Make the actual API call
-      await fetch(`${API_BACKEND_URL}/api/v1/website`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token,
-        },
-        body: JSON.stringify({ url }),
-      })
+      // await fetch(`${API_BACKEND_URL}/api/v1/website`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     Authorization: token,
+      //   },
+      //   body: JSON.stringify({ url }),
+      // })
 
       // Refresh to get the actual data from the server
       await refreshWebsites()
