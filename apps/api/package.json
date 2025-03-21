@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.5",
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "cors": "^2.8.5",
     "db": "*",
     "express": "^4.21.2"
   }

@@ -19,6 +19,7 @@ import {
   Settings,
   Sun,
 } from "lucide-react"
+import axios from "axios"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { API_BACKEND_URL } from "@/config"
 
 // API backend URL - replace with your actual API URL
 // const API_BACKEND_URL = "https://api.dpinuptime.com"
@@ -59,7 +61,7 @@ interface ProcessedWebsite {
   responseTime?: number
 }
 
-// Mock data for initial render
+// Add this mock data back in
 const mockWebsites: Website[] = [
   {
     id: "site-1",
@@ -113,21 +115,97 @@ function useAuth() {
   return { getToken }
 }
 
-// Websites hook (mock implementation)
+// Replace the useWebsites hook with this implementation
 function useWebsites() {
-  const [websites, setWebsites] = useState<Website[]>(mockWebsites)
+  const [websites, setWebsites] = useState<Website[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { getToken } = useAuth()
 
   const refreshWebsites = async () => {
-    // In a real app, this would fetch from your API
-    // For now, we'll just use our mock data
-    setWebsites([...mockWebsites])
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      // Get authentication token
+      const token = await getToken()
+      
+      // Fetch websites from API using the correct URL
+      const res = await fetch(`${API_BACKEND_URL}/api/v1/websites`, {
+        headers: {
+          Authorization: token,
+        },
+      })
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch websites: ${res.status} ${res.statusText}`)
+      }
+
+      const data = await res.json()
+      console.log("Fetched Websites:", data)
+
+      // Ensure we have an array of websites
+      if (Array.isArray(data)) {
+        setWebsites(data)
+      } else if (data && typeof data === "object" && Array.isArray(data.websites)) {
+        // Handle case where API returns { websites: [...] }
+        setWebsites(data.websites)
+      } else {
+        console.error("Unexpected data format:", data)
+        setWebsites([])
+      }
+    } catch (error) {
+      console.error("Error fetching websites:", error)
+      setError(error instanceof Error ? error.message : String(error))
+      
+      // Fallback to mock data for development
+      console.log("Falling back to mock data")
+      setWebsites(mockWebsites)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const addWebsite = async (url: string) => {
+    try {
+      // Get authentication token
+      const token = await getToken()
+      
+      // Create a temporary website with a temporary ID
+      const tempId = `temp-${Date.now()}`
+      const newWebsite: Website = {
+        id: tempId,
+        url,
+        ticks: [],
+      }
+
+      // Optimistically update UI
+      setWebsites((prev) => [...prev, newWebsite])
+
+      // Make the actual API call
+      await fetch(`${API_BACKEND_URL}/api/v1/website`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
+        body: JSON.stringify({ url }),
+      })
+
+      // Refresh to get the actual data from the server
+      await refreshWebsites()
+    } catch (error) {
+      console.error("Error adding website:", error)
+      // Still refresh to ensure we have the latest data
+      refreshWebsites()
+    }
   }
 
   useEffect(() => {
     refreshWebsites()
   }, [])
 
-  return { websites, refreshWebsites }
+  return { websites, isLoading, error, refreshWebsites, addWebsite }
 }
 
 // Status indicator component
@@ -221,7 +299,7 @@ export default function Dashboard() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const { websites, refreshWebsites } = useWebsites()
+  const { websites, isLoading, error, refreshWebsites, addWebsite } = useWebsites()
   const { getToken } = useAuth()
 
   // Process websites data for display
@@ -557,11 +635,42 @@ export default function Dashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {processedWebsites.map((website) => (
-                        <WebsiteCard key={website.id} website={website} />
-                      ))}
-                    </div>
+                    {isLoading ? (
+                      <div className="py-8 text-center">
+                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+                        <p className="mt-4 text-white/70">Loading websites...</p>
+                      </div>
+                    ) : error ? (
+                      <div className="py-8 text-center">
+                        <AlertCircle className="mx-auto h-10 w-10 text-red-500" />
+                        <p className="mt-4 text-white/70">Error loading websites: {error}</p>
+                        <Button
+                          onClick={refreshWebsites}
+                          variant="outline"
+                          size="sm"
+                          className="mt-4 border-white/10 bg-white/5 text-white hover:bg-white/10"
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    ) : processedWebsites.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Globe className="mx-auto h-10 w-10 text-white/40" />
+                        <p className="mt-4 text-white/70">No websites added yet</p>
+                        <Button
+                          onClick={() => setIsModalOpen(true)}
+                          className="mt-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700"
+                        >
+                          Add Your First Website
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {processedWebsites.map((website) => (
+                          <WebsiteCard key={website.id} website={website} />
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -583,15 +692,28 @@ export default function Dashboard() {
             const token = await getToken()
             setIsModalOpen(false)
 
-            // In a real app, this would call your API
-            console.log(`Adding website: ${url} with token: ${token}`)
+            // First add the website optimistically to the UI
+            addWebsite(url)
 
-            // Mock adding a website
-            setTimeout(() => {
-              refreshWebsites()
-            }, 500)
+            // Then make the API call
+            await axios.post(
+              `${API_BACKEND_URL}/api/v1/website`,
+              {
+                url,
+              },
+              {
+                headers: {
+                  Authorization: token,
+                },
+              },
+            )
+
+            // Refresh to get the latest data
+            refreshWebsites()
           } catch (error) {
             console.error("Error adding website:", error)
+            // Still refresh to ensure we have the latest data
+            refreshWebsites()
           }
         }}
       />
@@ -601,109 +723,45 @@ export default function Dashboard() {
 
 // Website card component
 function WebsiteCard({ website }: { website: ProcessedWebsite }) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
       <div
-        className="p-4 cursor-pointer flex items-center justify-between hover:bg-white/5"
+        className="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center space-x-4">
           <StatusCircle status={website.status} />
           <div>
-            <h3 className="text-base font-medium">{website.url}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{website.url}</h3>
           </div>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="hidden md:block text-right">
-            <p className="text-sm font-medium">Response Time</p>
-            <p
-              className={`text-sm ${
-                website.status === "bad"
-                  ? "text-red-400"
-                  : website.responseTime && website.responseTime > 300
-                    ? "text-yellow-400"
-                    : "text-green-400"
-              }`}
-            >
-              {website.status === "bad" ? "N/A" : `${website.responseTime}ms`}
-            </p>
-          </div>
-          <div className="hidden md:block text-right">
-            <p className="text-sm font-medium">Uptime</p>
-            <p className="text-sm text-white/80">{website.uptimePercentage.toFixed(1)}%</p>
-          </div>
-          <div className="hidden md:block text-right">
-            <p className="text-sm font-medium">Last Checked</p>
-            <p className="text-sm text-white/80">{website.lastChecked}</p>
-          </div>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            {website.uptimePercentage.toFixed(1)}% uptime
+          </span>
           {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-white/40" />
+            <ChevronUp className="w-5 h-5 text-gray-400 dark:text-gray-500" />
           ) : (
-            <ChevronDown className="h-5 w-5 text-white/40" />
+            <ChevronDown className="w-5 h-5 text-gray-400 dark:text-gray-500" />
           )}
         </div>
       </div>
-
+      
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-white/10">
-          {/* Mobile view stats */}
-          <div className="grid grid-cols-3 gap-4 mt-4 md:hidden">
-            <div className="text-center">
-              <p className="text-xs font-medium text-white/60">Response Time</p>
-              <p
-                className={`text-sm ${
-                  website.status === "bad"
-                    ? "text-red-400"
-                    : website.responseTime && website.responseTime > 300
-                      ? "text-yellow-400"
-                      : "text-green-400"
-                }`}
-              >
-                {website.status === "bad" ? "N/A" : `${website.responseTime}ms`}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-medium text-white/60">Uptime</p>
-              <p className="text-sm">{website.uptimePercentage.toFixed(1)}%</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-medium text-white/60">Last Checked</p>
-              <p className="text-sm">{website.lastChecked}</p>
-            </div>
-          </div>
-
-          {/* Uptime timeline */}
-          <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h4 className="flex items-center text-sm font-medium text-white/80">
-                <Clock className="mr-2 h-4 w-4" /> Uptime Timeline (Last 30 minutes)
-              </h4>
-              <span className="text-xs text-white/60">3-minute intervals</span>
-            </div>
+        <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="mt-3">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Last 30 minutes status:</p>
             <UptimeTicks ticks={website.uptimeTicks} />
-            <div className="mt-1 flex justify-between text-xs text-white/60">
-              <span>30 minutes ago</span>
-              <span>Now</span>
-            </div>
           </div>
-
-          {/* Action buttons */}
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" size="sm" className="border-white/10 bg-white/5 text-white hover:bg-white/10">
-              View Details
-            </Button>
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700"
-            >
-              Check Now
-            </Button>
-          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            Last checked: {website.lastChecked}
+          </p>
         </div>
       )}
     </div>
-  )
+  );
 }
+
 
