@@ -47,7 +47,7 @@ model WebsiteTick{
 }
 
 enum WebsiteStatus {
-  UP 
-  DOWN
+  GOOD
+  BAD
   UNKNOWN
 }

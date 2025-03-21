@@ -37,7 +37,7 @@ import { API_BACKEND_URL } from "@/config"
 // const API_BACKEND_URL = "https://api.dpinuptime.com"
 
 // Type definitions
-type UptimeStatus = "good" | "bad" | "unknown"
+type UptimeStatus = "GOOD" | "BAD" | "unknown"
 
 interface WebsiteTick {
   status: string
@@ -68,7 +68,7 @@ const mockWebsites: Website[] = [
     ticks: Array(50)
       .fill(null)
       .map((_, i) => ({
-        status: Math.random() > 0.1 ? "Good" : "Bad",
+        status: Math.random() > 0.1 ? "GOOD" : "BAD",
         createdAt: new Date(Date.now() - i * 60000).toISOString(),
       })),
   },
@@ -78,7 +78,7 @@ const mockWebsites: Website[] = [
     ticks: Array(50)
       .fill(null)
       .map((_, i) => ({
-        status: Math.random() > 0.05 ? "Good" : "Bad",
+        status: Math.random() > 0.05 ? "GOOD" : "BAD",
         createdAt: new Date(Date.now() - i * 60000).toISOString(),
       })),
   },
@@ -88,7 +88,7 @@ const mockWebsites: Website[] = [
     ticks: Array(50)
       .fill(null)
       .map((_, i) => ({
-        status: Math.random() > 0.01 ? "Good" : "Bad",
+        status: Math.random() > 0.01 ? "GOOD" : "BAD",
         createdAt: new Date(Date.now() - i * 60000).toISOString(),
       })),
   },
@@ -98,7 +98,7 @@ const mockWebsites: Website[] = [
     ticks: Array(50)
       .fill(null)
       .map((_, i) => ({
-        status: i < 10 ? "Bad" : "Good",
+        status: i < 10 ? "BAD" : "GOOD",
         createdAt: new Date(Date.now() - i * 60000).toISOString(),
       })),
   },
@@ -168,7 +168,7 @@ function useWebsites() {
   const addWebsite = async (url: string) => {
     try {
       // Get authentication token
-      const token = await getToken()
+      // const token = await getToken()
       
       // Create a temporary website with a temporary ID
       const tempId = `temp-${Date.now()}`
@@ -212,10 +212,10 @@ function StatusCircle({ status }: { status: UptimeStatus }) {
   let statusColor = ""
 
   switch (status) {
-    case "good":
+    case "GOOD":
       statusColor = "bg-green-500"
       break
-    case "bad":
+    case "BAD":
       statusColor = "bg-red-500"
       break
     default:
@@ -239,13 +239,13 @@ function UptimeTicks({ ticks }: { ticks: UptimeStatus[] }) {
         <div
           key={index}
           className={`h-8 flex-1 rounded ${
-            tick === "good"
+            tick === "GOOD"
               ? "bg-gradient-to-r from-green-600 to-green-700"
-              : tick === "bad"
+              : tick === "BAD"
                 ? "bg-gradient-to-r from-red-600 to-red-700"
                 : "bg-gradient-to-r from-gray-600 to-gray-700"
           } transition-all duration-300 hover:opacity-90`}
-          title={`${index * 3} minutes ago: ${tick === "good" ? "Operational" : tick === "bad" ? "Down" : "Unknown"}`}
+          title={`${index * 3} minutes ago: ${tick === "GOOD" ? "Operational" : tick === "BAD" ? "Down" : "Unknown"}`}
         ></div>
       ))}
     </div>
@@ -326,13 +326,13 @@ export default function Dashboard() {
         })
 
         // Window is considered up if majority of ticks are up
-        const upTicks = windowTicks.filter((tick) => tick.status === "Good").length
-        windows[9 - i] = windowTicks.length === 0 ? "unknown" : upTicks / windowTicks.length >= 0.5 ? "good" : "bad"
+        const upTicks = windowTicks.filter((tick) => tick.status === "GOOD").length
+        windows[9 - i] = windowTicks.length === 0 ? "unknown" : upTicks / windowTicks.length >= 0.5 ? "GOOD" : "BAD"
       }
 
       // Calculate overall status and uptime percentage
       const totalTicks = sortedTicks.length
-      const upTicks = sortedTicks.filter((tick) => tick.status === "Good").length
+      const upTicks = sortedTicks.filter((tick) => tick.status === "GOOD").length
       const uptimePercentage = totalTicks === 0 ? 100 : (upTicks / totalTicks) * 100
 
       // Get the most recent status
@@ -343,9 +343,9 @@ export default function Dashboard() {
 
       // Mock response time based on status
       const responseTime =
-        currentStatus === "good"
+        currentStatus === "GOOD"
           ? Math.floor(Math.random() * 200) + 20
-          : currentStatus === "bad"
+          : currentStatus === "BAD"
             ? 0
             : Math.floor(Math.random() * 300) + 200
 
@@ -373,9 +373,9 @@ export default function Dashboard() {
   // Calculate stats
   const stats = {
     total: processedWebsites.length,
-    operational: processedWebsites.filter((site) => site.status === "good").length,
+    operational: processedWebsites.filter((site) => site.status === "GOOD").length,
     degraded: processedWebsites.filter((site) => site.status === "unknown").length,
-    down: processedWebsites.filter((site) => site.status === "bad").length,
+    down: processedWebsites.filter((site) => site.status === "BAD").length,
   }
 
   return (
